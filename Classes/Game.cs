@@ -41,7 +41,7 @@ namespace SCVRPatcher {
                     continue;
                 }
                 var attributes = new AttributesFile(attributesFile);
-                if (!attributes.Patch(config, resolution)) {
+                if (!attributes.Patch(config, resolution, changeresolution)) {
                     Logger.Error($"Failed to patch {attributesFile.Quote()}!");
                     continue;
                 }

@@ -60,7 +60,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="Embedded\hmdq.exe" />
     <EmbeddedResource Include="NLog.config">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </EmbeddedResource>

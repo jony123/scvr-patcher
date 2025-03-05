@@ -31,7 +31,6 @@ namespace SCVRPatcher {
         internal static EAC? eac { get; private set; }
         internal static Game? game { get; private set; }
         internal static VorpX? vorpx { get; private set; }
-        internal static Hmdq? hmdq { get; private set; }
 
         public static void SetupLogging() {
             Stream? stream = typeof(MainWindow).Assembly.GetManifestResourceStream("SCVRPatcher.NLog.config");
@@ -106,72 +105,10 @@ namespace SCVRPatcher {
             eac = new();
             game = new();
             vorpx = new();
-            hmdq = new();
             vorpx.Load();
             configDatabase = new();
             LoadAvailableConfigs(availableConfigsUrl, availableConfigsFile);
-            hmdq.Initialize();
-            hmdq.RunHmdq();
-            if (hmdq.IsEmpty) {
-                Logger.Error("Failed to get HMD info through HMDQ!");
-                bool isSteamVRRunning = Process.GetProcessesByName("vrmonitor").Length > 0;
-                bool isOculusRunning = Process.GetProcessesByName("OVRServer_x64").Length > 0;
-                if (!isSteamVRRunning && !isOculusRunning) {
-                    Logger.Error("SteamVR or Oculus not running!");
-                    //var _ = MessageBox.Show("SteamVR or Oculus not running!", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                    // present user with option to start SteamVR or continue without starting either
-                    MessageBoxResult result = System.Windows.MessageBox.Show("Oculus not running! Start Oculus?", "Error", MessageBoxButton.YesNo, MessageBoxImage.Error);
-                    if (result == MessageBoxResult.Yes) {
-                        // start Oculus with oculus:// uri protocol
-                        Logger.Info("Starting Oculus!");
-                        Uri oculusUri = new("oculus://");
-                        oculusUri.OpenInDefaultBrowser();
-                        // wait for Oculus process to start and then continue
-                        Process[] oculusProcess = Process.GetProcessesByName("OVRServer_x64");
-                        while (oculusProcess.Length == 0) {
-                            System.Threading.Thread.Sleep(1000);
-                            oculusProcess = Process.GetProcessesByName("OVRServer_x64");
-                        }
-                        hmdq.RunHmdq();
-                    } else {
-                        result = MessageBox.Show("SteamVR not running! Start SteamVR?", "Error", MessageBoxButton.YesNo, MessageBoxImage.Error);
-                        if (result == MessageBoxResult.Yes) {
-                            // start SteamVR with steam://run/250820
-                            Logger.Info("Starting SteamVR!");
-                            Uri steamUri = new("steam://run/250820");
-                            steamUri.OpenInDefaultBrowser();
-                            // wait for SteamVR process to start and then continue
-                            Process[] steamProcess = Process.GetProcessesByName("vrmonitor");
-                            while (steamProcess.Length == 0) {
-                                System.Threading.Thread.Sleep(1000);
-                                steamProcess = Process.GetProcessesByName("vrmonitor");
-                            }
-                            hmdq.RunHmdq();
-                        }
-                    }
-                } else {
-                    Logger.Info("SteamVR or Oculus running!");
-                }
-            }
-            if (!hmdq.IsEmpty) {
-                Logger.Info($"Manufacturer: {hmdq.Manufacturer} Model: {hmdq.Model} {hmdq.Width}x{hmdq.Height} (fov: {hmdq.VerticalFov})");
-                HmdConfig detectedHmdConfig = new() {
-                    Fov = hmdq.VerticalFov,
-                    CustomResolutions = [
-                        new Resolution() {
-                            Height = hmdq.Height,
-                            Width = hmdq.Width,
-                            Description = "Pulled from HMDQ",
-                            //Percentage = "100"
-                        }
-                    ]
-                };
-                Dictionary<string, HmdConfig> detectedHmd = new() { { hmdq.Model, detectedHmdConfig } };
-                Dictionary<string, Dictionary<string, HmdConfig>> detectedBrand = new() { { hmdq.Manufacturer, detectedHmd } };
-                configDatabase.Brands.Add("Detected", detectedBrand);
 
-                Logger.Info($"Added HMDQ info to configDatabase");
-            }
             game.Initialize();
             InitializeComponent();
             FillHmds(configDatabase);
